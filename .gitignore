@@ -1,4 +1,5 @@
 save/
+data/
 *.bin
 *pth
 *.gz
