@@ -92,10 +92,12 @@ class FeatureExtractor:
 
     def get_batch_proposals(self, images, im_scales, im_infos, proposals):
         proposals_batch = []
+        
         for idx, img_info in enumerate(im_infos):
             boxes_tensor = torch.from_numpy(
                 proposals[idx]["bbox"][: int(proposals[idx]["num_box"]), 0:]
             ).to("cuda")
+            
             orig_image_size = (img_info["width"], img_info["height"])
             boxes = BoxList(boxes_tensor, orig_image_size)
             image_size = (images.image_sizes[idx][1], images.image_sizes[idx][0])
@@ -189,26 +191,31 @@ class FeatureExtractor:
         return feat_list, info_list
 
     def get_detectron_features(self, image_paths):
-        img_tensor, im_scales, im_infos = [], [], []
+        img_tensor, im_scales, im_infos, im_bbox = [], [], [], []
 
         for image_path in image_paths:
             #print('Image Path ' ,image_path)
+            # print("image transformations...")
             im, im_scale, im_info = self._image_transform(image_path["file_path"])
-
+            print("image transformations done")
             img_tensor.append(im)
             im_scales.append(im_scale)
             im_infos.append(im_info)
+            im_bbox.append(image_path)
 
         # Image dimensions should be divisible by 32, to allow convolutions
         # in detector to work
         current_img_list = to_image_list(img_tensor, size_divisible=32)
         current_img_list = current_img_list.to("cuda")
-
+        # print("Infos: curr image, im_scale, img_infos, image_path_bbox: \n",current_img_list, im_scales, im_infos, im_bbox )
+        # print("Getting batch proposals...")
+        # print("Infos: curr image, im_scale, img_infos, image_path_bbox: \n",current_img_list, im_scales, im_infos, image_paths['bbox'] )
         proposals = self.get_batch_proposals(
-            current_img_list, im_scales, im_infos, image_paths['bbox']
+            current_img_list, im_scales, im_infos, im_bbox
         )
-        print(proposals)
-
+        print("Getting batch proposals done")
+  
+        
         with torch.no_grad():
             output = self.detection_model(current_img_list, proposals=proposals)
 
@@ -219,7 +226,7 @@ class FeatureExtractor:
             self.args.feature_name,
             self.args.confidence_threshold,
         )
-
+        print("Features extracted!")
         return feat_list
 
     def _chunks(self, array, chunk_size):
@@ -233,7 +240,7 @@ class FeatureExtractor:
         file_base_name = str(file_base_name) + ".npy"
 
         np.save(os.path.join(self.args.output_folder, file_base_name), info)
-        print('Saved features')
+        print("Saved in: "+os.path.join(self.args.output_folder, file_base_name))
 
     def extract_features(self):
         files = np.load(self.args.imdb_gt_file, allow_pickle=True)
@@ -244,10 +251,10 @@ class FeatureExtractor:
             try:
                 print('##############   CNT : ', cnt)
                 cnt += 1
-                print('Getting features 1')
-                print(chunk)
+                print('Getting features...')
+                # print(chunk)
                 features, infos = self.get_detectron_features(chunk)
-                print('Getting features')
+                print('Getting features done!')
                 for idx, c in enumerate(chunk):
                     self._save_feature(c["file_name"], features[idx], infos[idx])
             except BaseException:
