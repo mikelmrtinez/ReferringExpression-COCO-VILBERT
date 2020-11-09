@@ -2,6 +2,9 @@ import argparse
 from tools.refer.refer import REFER
 import numpy as np
 import matplotlib.pyplot as plt
+import PIL
+import torch
+from matplotlib.patches import Rectangle
 
 def main():
     parser = argparse.ArgumentParser()
@@ -65,7 +68,8 @@ def main():
     stock = []
     proccesed_images = []
     cnt = 0
-    for ref_id, ref_info in enumerate(refer.Refs.items()):
+    
+    for ref_id in ref_ids:
         if cnt >= 20:
             break
         cnt += 1
@@ -74,6 +78,7 @@ def main():
         #Load info of image COCO
         img = refer.loadImgs(img_id)[0]
         if img['file_name'] not in proccesed_images:
+            #print(img)
             proccesed_images.append(img['file_name'])
             #get the coco annotations' id of image
             ann_ids = refer.getAnnIds(img['id'])
@@ -94,7 +99,21 @@ def main():
     print('SAVED INFOS!')
 
 if __name__ == "__main__":
+    
     main()
-    data = np.load('gt_data.npy',  allow_pickle=True)
-    print(data)
+    # UNCOMENT TO CHECK IF IS CORRECTLY STORED THE BBOXEZS
+    # data = np.load('gt_data.npy',  allow_pickle=True).reshape(-1,1)[3][0]
+    # print(data)
+    # image_path = data["file_path"]
+    # img = PIL.Image.open(image_path).convert('RGB')
+    # img = torch.tensor(np.array(img))
+    # plt.axis('off')
+    # plt.imshow(img)
+
+    # for i in range(data['bbox'].shape[0]):
+    #     bbox = data['bbox'][i]
+    #     ax = plt.gca()
+    #     box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='red', linewidth=2)
+    #     ax.add_patch(box_plot)
+    # plt.show()
 
