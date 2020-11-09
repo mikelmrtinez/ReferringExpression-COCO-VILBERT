@@ -202,8 +202,6 @@ class FeatureExtractor:
         img_tensor, im_scales, im_infos, im_bbox = [], [], [], []
 
         for image_path in image_paths:
-            #print('Image Path ' ,image_path)
-            # print("image transformations...")
             im, im_scale, im_info = self._image_transform(image_path["file_path"])
             img_tensor.append(im)
             im_scales.append(im_scale)
@@ -214,9 +212,6 @@ class FeatureExtractor:
         # in detector to work
         current_img_list = to_image_list(img_tensor, size_divisible=32)
         current_img_list = current_img_list.to("cuda")
-        # print("Infos: curr image, im_scale, img_infos, image_path_bbox: \n",current_img_list, im_scales, im_infos, im_bbox )
-        # print("Getting batch proposals...")
-        # print("Infos: curr image, im_scale, img_infos, image_path_bbox: \n",current_img_list, im_scales, im_infos, image_paths['bbox'] )
         proposals = self.get_batch_proposals(
             current_img_list, im_scales, im_infos, im_bbox
         )
@@ -257,7 +252,6 @@ class FeatureExtractor:
             print('##############   CNT : ', cnt)
             cnt += 1
             print('Getting Batch features...')
-            # print(chunk)
             features, infos = self.get_detectron_features(chunk)
             extraction.append((features, infos))
             print('Getting Batch features done!')
@@ -292,10 +286,14 @@ def prediction_refering_expression(question, features, spatials, segment_ids, in
     width, height = float(infos[0]['image_width']), float(infos[0]['image_height'])
 
     # grounding: 
+    print(vision_logit)
     logits_vision = torch.max(vision_logit, 1)[1].data
+    print(logits_vision)
     grounding_val, grounding_idx = torch.sort(vision_logit.view(-1), 0, True)    
+    
+ 
         
-    print("Spatials ---> ", spatials)
+    print("Spatials ---> ", spatials.shape)
     # for whole batch to do!
     top_idx = grounding_idx[0]
     print('top_idx: ',top_idx)
@@ -313,12 +311,9 @@ def untokenize_batch(batch):
 
 
 def custom_prediction(query, task, features, infos, tokenizer, model):
-    print(query)
+    
     tokens = tokenizer.encode(query)
-    print(tokens)
     tokens = tokenizer.add_special_tokens_single_sentence(tokens)
-    print(tokens)
-    print(untokenize_batch(tokens))
     segment_ids = [0] * len(tokens)
     input_mask = [1] * len(tokens)
 
@@ -461,7 +456,7 @@ if __name__ == "__main__":
 
     
     data_root = './data'  # contains refclef, refcoco, refcoco+, refcocog and images
-    dataset = 'refcoco'
+    dataset = 'refcoco+'
     splitBy = 'unc'
     feat_root = "./data/feat_gt"
     refer = REFER(data_root, dataset, splitBy)
@@ -478,16 +473,17 @@ if __name__ == "__main__":
         img_id = refer.getImgIds(ref_id)
         #Load info of image COCO
         img = refer.loadImgs(img_id)[0]
-        #Load feat gt bbox of image
+        #Load features gt bbox of image and infos
         feat_gt = np.load(os.path.join(feat_root, str(img['file_name']).split(".")[0]+ '.npy'), allow_pickle=True).reshape(-1,1)[0][0]
         features = [torch.from_numpy(feat_gt['features'])]
         infos = copy.deepcopy(feat_gt)
         infos.pop('features')
         infos.pop('image_id')
         infos = [infos]
-        #get the refCOCO references of image
+        #get the refCOCO bboxes of image
         ref = refer.Refs[ref_id]
         ref_bbox = refer.getRefBox(ref['ref_id'])
+        
         task = [9]
     
         for indx, sentence in enumerate (ref['sentences']):
