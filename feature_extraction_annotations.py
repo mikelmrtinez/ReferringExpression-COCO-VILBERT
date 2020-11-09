@@ -1,6 +1,7 @@
 import argparse
 from tools.refer.refer import REFER
 import numpy as np
+import matplotlib.pyplot as plt
 
 def main():
     parser = argparse.ArgumentParser()
@@ -62,28 +63,32 @@ def main():
     ref_ids = refer.getRefIds(split=args.desired_split)
     # Loop through all references and create data
     stock = []
+    proccesed_images = []
     cnt = 0
     for ref_id, ref_info in enumerate(refer.Refs.items()):
-        if cnt >= 10:
+        if cnt >= 20:
             break
         cnt += 1
         #Load img id
         img_id = refer.getImgIds(ref_id)
         #Load info of image COCO
         img = refer.loadImgs(img_id)[0]
-        #get the coco annotations' id of image
-        ann_ids = refer.getAnnIds(img['id'])
-        #loop through all annotations per image to get the GT bbox
-        bboxes = []
-        for i in range(len(ann_ids)):
-            ann = refer.loadAnns(ann_ids[i])[0]
-            bboxes.append(ann['bbox'])
-        info = {}
-        info['file_name'] = img['file_name']
-        info['file_path'] = refer.IMAGE_DIR+'/'+img['file_name']
-        info['bbox'] = np.array(bboxes)
-        info['num_box'] = len(ann_ids)
-        stock.append(info)
+        if img['file_name'] not in proccesed_images:
+            proccesed_images.append(img['file_name'])
+            #get the coco annotations' id of image
+            ann_ids = refer.getAnnIds(img['id'])
+            #loop through all annotations per image to get the GT bbox
+            bboxes = []
+            for i in range(len(ann_ids)):
+                ann = refer.loadAnns(ann_ids[i])[0]
+                bboxes.append(ann['bbox'])
+            info = {}
+            info['file_name'] = img['file_name']
+            info['file_path'] = refer.IMAGE_DIR+'/'+img['file_name']
+            info['bbox'] = np.array(bboxes)
+            info['num_box'] = len(ann_ids)
+            stock.append(info)
+
     np.save('gt_data', stock, allow_pickle=True)
 
     print('SAVED INFOS!')
