@@ -203,7 +203,7 @@ class FeatureExtractor:
             im_scales.append(im_scale)
             im_infos.append(im_info)
             im_bbox.append(image_path)
-        print("   Images transformations done")
+        #print("   Images transformations done")
         # Image dimensions should be divisible by 32, to allow convolutions
         # in detector to work
         current_img_list = to_image_list(img_tensor, size_divisible=32)
@@ -211,7 +211,7 @@ class FeatureExtractor:
         proposals = self.get_batch_proposals(
             current_img_list, im_scales, im_infos, im_bbox
         )
-        print("   Getting batch proposals done")
+        #print("   Getting batch proposals done")
   
         
         with torch.no_grad():
@@ -224,7 +224,7 @@ class FeatureExtractor:
             self.args.feature_name,
             self.args.confidence_threshold,
         )
-        print("   Features batch extracted!")
+        #print("   Features batch extracted!")
         return feat_list
 
     def _chunks(self, array, chunk_size):
@@ -238,7 +238,7 @@ class FeatureExtractor:
         file_base_name = str(file_base_name) + ".npy"
 
         np.save(os.path.join(self.args.output_folder, file_base_name), info)
-        print("Saved in: "+os.path.join(self.args.output_folder, file_base_name))
+        #print("Saved in: "+os.path.join(self.args.output_folder, file_base_name))
 
     def extract_features(self):
         extraction = []
@@ -246,12 +246,12 @@ class FeatureExtractor:
         cnt = 1
         
         for chunk in self._chunks(files, self.args.batch_size):
-            print('##############   CNT : ', cnt)
+            #print('##############   CNT : ', cnt)
             cnt += 1
-            print('Getting Batch features...')
+            #print('Getting Batch features...')
             features, infos = self.get_detectron_features(chunk)
             extraction.append((features, infos))
-            print('Getting Batch features done!')
+            #print('Getting Batch features done!')
             for idx, c in enumerate(chunk):
                 self._save_feature(c["file_name"], features[idx], infos[idx])
         return extraction
