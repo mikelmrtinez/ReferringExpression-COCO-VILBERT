@@ -29,6 +29,7 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+
 class FeatureExtractor:
     MAX_SIZE = 1333
     MIN_SIZE = 800
