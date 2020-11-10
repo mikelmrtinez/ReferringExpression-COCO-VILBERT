@@ -31,19 +31,26 @@ from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
 #Metric
-def computeIoU(box1, box2):
+def computeIoU(box1_list, box2_list):
     # each box is of [x1, y1, w, h]
-    inter_x1 = max(box1[0], box2[0])
-    inter_y1 = max(box1[1], box2[1])
-    inter_x2 = min(box1[0]+box1[2]-1, box2[0]+box2[2]-1)
-    inter_y2 = min(box1[1]+box1[3]-1, box2[1]+box2[3]-1)
+    iou = []
+    for i in range(len(box1_list)):
+        box1, box2 = box1_list[i], box2_list[i]
+        inter_x1 = max(box1[0], box2[0])
+        inter_y1 = max(box1[1], box2[1])
+        inter_x2 = min(box1[0]+box1[2]-1, box2[0]+box2[2]-1)
+        inter_y2 = min(box1[1]+box1[3]-1, box2[1]+box2[3]-1)
 
-    if inter_x1 < inter_x2 and inter_y1 < inter_y2:
-        inter = (inter_x2-inter_x1+1)*(inter_y2-inter_y1+1)
-    else:
-        inter = 0
-    union = box1[2]*box1[3] + box2[2]*box2[3] - inter
-    return float(inter)/union
+        if inter_x1 < inter_x2 and inter_y1 < inter_y2:
+            inter = (inter_x2-inter_x1+1)*(inter_y2-inter_y1+1)
+        else:
+            inter = 0
+        union = box1[2]*box1[3] + box2[2]*box2[3] - inter
+        iou.append(float(inter)/union)
+    
+    return np.array(iou)
+
+
 def score(IoU, threshold):
     pre_scores = np.where(IoU>threshold, 1, 0)
     return pre_scores.mean()
@@ -58,24 +65,23 @@ def prediction_refering_expression(question, features, spatials, segment_ids, in
     width, height = float(infos[0]['image_width']), float(infos[0]['image_height'])
 
     # grounding: 
-    print(vision_logit)
     logits_vision = torch.max(vision_logit, 1)[1].data
-    print(logits_vision)
-    grounding_val, grounding_idx = torch.sort(vision_logit.view(-1), 0, True)    
-    
- 
+    grounding_val, grounding_idx = torch.sort(vision_logit.squeeze(2), 1, True)    
         
-    print("Spatials ---> ", spatials.shape)
     # for whole batch to do!
-    top_idx = grounding_idx[0]
-    print('top_idx: ',top_idx)
-    top_box = spatials[0][top_idx][:4].tolist() 
-    y1 = int(top_box[1] * height)
-    y2 = int(top_box[3] * height)
-    x1 = int(top_box[0] * width)
-    x2 = int(top_box[2] * width)
-    
-    predicted_bboxes = [x1, y1, x2, y2]
+    top_idx = grounding_idx[:,0].tolist()
+    predicted_bboxes = []
+    for indx, value in enumerate(top_idx):
+        y1 = spatials[indx, value,1]*height
+        # y1 = top_box[:,1] * height
+        y2 = spatials[indx, value,3]*height
+        #y2 = top_box[:,3] * height
+        x1 = spatials[indx, value,0]*width
+        #x1 = top_box[:,0] * width
+        x2 = spatials[indx, value,2]*width
+        #x2 = top_box[:,2] * width
+
+        predicted_bboxes.append([x1.item(), y1.item(), x2.item(), y2.item()])
     return predicted_bboxes
 
 def untokenize_batch(batch):
@@ -83,31 +89,36 @@ def untokenize_batch(batch):
 
 
 def custom_prediction(query, task, features, infos, tokenizer, model):
-    
-    tokens = tokenizer.encode(query)
-    tokens = tokenizer.add_special_tokens_single_sentence(tokens)
-    segment_ids = [0] * len(tokens)
-    input_mask = [1] * len(tokens)
-
-    max_length = 37
-    if len(tokens) < max_length:
-        # Note here we pad in front of the sentence
-        padding = [0] * (max_length - len(tokens))
-        tokens = tokens + padding
-        input_mask += padding
-        segment_ids += padding
-
-    text = torch.from_numpy(np.array(tokens)).cuda().unsqueeze(0)
-    input_mask = torch.from_numpy(np.array(input_mask)).cuda().unsqueeze(0)
-    segment_ids = torch.from_numpy(np.array(segment_ids)).cuda().unsqueeze(0)
-    task = torch.from_numpy(np.array(task)).cuda().unsqueeze(0)
 
     num_image = len(infos)
 
     feature_list = []
     image_location_list = []
     image_mask_list = []
+    text_list = []
+    input_mask_list = []
+    segment_ids_list = []
+    task_list = []
+
     for i in range(num_image):
+        tokens = tokenizer.encode(query[i])
+        tokens = tokenizer.add_special_tokens_single_sentence(tokens)
+        segment_ids = [0] * len(tokens)
+        input_mask = [1] * len(tokens)
+
+        max_length = 37
+        if len(tokens) < max_length:
+            # Note here we pad in front of the sentence
+            padding = [0] * (max_length - len(tokens))
+            tokens = tokens + padding
+            input_mask += padding
+            segment_ids += padding
+
+        text_list.append(torch.from_numpy(np.array(tokens)).cuda().unsqueeze(0))
+        input_mask_list.append(torch.from_numpy(np.array(input_mask)).cuda().unsqueeze(0))
+        segment_ids_list.append(torch.from_numpy(np.array(segment_ids)).cuda().unsqueeze(0))
+        task_list.append(torch.from_numpy(np.array(task)).cuda().unsqueeze(0))
+
         image_w = infos[i]['image_width']
         image_h = infos[i]['image_height']
         feature = features[i]
@@ -136,6 +147,13 @@ def custom_prediction(query, task, features, infos, tokenizer, model):
     spatials = torch.stack(image_location_list, dim=0).float().cuda()
     image_mask = torch.stack(image_mask_list, dim=0).byte().cuda()
     co_attention_mask = torch.zeros((num_image, num_boxes, max_length)).cuda()
+
+    text = torch.stack(text_list, dim=0).long().cuda().squeeze(1)
+    input_mask = torch.stack(input_mask_list, dim=0).long().cuda().squeeze(1)
+    segment_ids = torch.stack(segment_ids_list, dim=0).long().cuda().squeeze(1)
+    task = torch.stack(task_list, dim=0).long().cuda().squeeze(1)
+
+    #print(features.shape, spatials.shape, image_mask.shape, co_attention_mask.shape, text.shape, input_mask.shape, segment_ids.shape, task.shape)
 
     pred_bboxes = prediction_refering_expression(text, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task, model, infos)
     return pred_bboxes
@@ -215,6 +233,33 @@ def callVILBert():
 
     return tokenizer, model
 
+def batch_loader(i, batch_size, refer, ref_ids):
+    features_list, query_list, infos_list,  ref_bbox_list = [], [], [], []
+    for j in range(i, (i+1)*batch_size):
+        ref_id = ref_ids[j]
+        img_id = refer.getImgIds(ref_id)
+        #Load info of image COCO
+        img = refer.loadImgs(img_id)[0]
+        #Load features gt bbox of image and infos
+        feat_gt = np.load(os.path.join(feat_root, str(img['file_name']).split(".")[0]+ '.npy'), allow_pickle=True).reshape(-1,1)[0][0]
+        features = torch.from_numpy(feat_gt['features'])
+        #Prepare infos removing the last two keys of dictionary loaded form gt_bboxes
+        infos = copy.deepcopy(feat_gt)
+        infos.pop('features')
+        infos.pop('image_id')
+        #get the refCOCO bboxes of image
+        ref = refer.Refs[ref_id]
+        ref_bbox = refer.getRefBox(ref['ref_id'])
+
+        for indx, sentence in enumerate (ref['sentences']):
+            query_list.append(sentence['sent'])
+            features_list.append(features)
+            infos_list.append(infos)
+            ref_bbox_list.append(ref_bbox)
+
+    return features_list, query_list, infos_list,  ref_bbox_list
+
+
 
 if __name__ == "__main__":
 
@@ -229,7 +274,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--dataset",
-        default="refcoco+",
+        default="refcoco",
         type=str,
         help="dataset.",
     )
@@ -251,6 +296,7 @@ if __name__ == "__main__":
         type=str,
         help="Directory of the GT features .npy file",
     )
+    parser.add_argument("--batch_size", type=int, default=2, help="Batch size")
 
     args_data = parser.parse_args()
 
@@ -265,40 +311,15 @@ if __name__ == "__main__":
     tokenizer, model = callVILBert()
     scores = []
 
-    for i in tqdm(range(len(ref_ids))):
-        ref_id = ref_ids[i]
-        #Load img id
-        img_id = refer.getImgIds(ref_id)
-        #Load info of image COCO
-        img = refer.loadImgs(img_id)[0]
-        #Load features gt bbox of image and infos
-        feat_gt = np.load(os.path.join(feat_root, str(img['file_name']).split(".")[0]+ '.npy'), allow_pickle=True).reshape(-1,1)[0][0]
-        features = [torch.from_numpy(feat_gt['features'])]
-        infos = copy.deepcopy(feat_gt)
-        infos.pop('features')
-        infos.pop('image_id')
-        infos = [infos]
-        #get the refCOCO bboxes of image
-        ref = refer.Refs[ref_id]
-        ref_bbox = refer.getRefBox(ref['ref_id'])
-        
+    for i in tqdm(range(0, len(ref_ids), args_data.batch_size)):
+        features, query, infos,  ref_bboxes = batch_loader(i, args_data.batch_size, refer, ref_ids)      
         task = [9]
-        curr_score = []
-        for indx, sentence in enumerate (ref['sentences']):
-            query = sentence['sent']
-            pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
-            print("Predicted BBOX: ", pred_bboxes)
-            print("refCOCO BBOX: ", ref_bbox)
-            # plt.figure()
-            # refer.showRef(ref, seg_box='box')
-            # ax = plt.gca()
-            # box_plot = Rectangle((pred_bboxes[0], pred_bboxes[1]), pred_bboxes[2], pred_bboxes[3], fill=False, edgecolor='red', linewidth=2)
-            # ax.add_patch(box_plot)
-            # plt.show()
-            curr_score.append(computeIoU(pred_bboxes,ref_bbox))
-
-        scores.append(max(curr_score))
-    print("Score = ", score(np.array(scores), 0.5))
+        pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
+        iou_batch = computeIoU(pred_bboxes,ref_bboxes)
+        scores.append(score(iou_batch, 0.5))
+        if i%25 == 0:
+            print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
+    print("\nFinal Score of Evaluation: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
         
 
 
