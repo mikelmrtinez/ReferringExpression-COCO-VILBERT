@@ -93,9 +93,9 @@ def main():
             info['num_box'] = len(ann_ids)
             stock.append(info)
 
-    np.save('data/gt_data_'+args.dataset, stock, allow_pickle=True)
+    np.save('data/features_gt/'+args.dataset, stock, allow_pickle=True)
 
-    print('\nSAVED INFOS in '+'data/gt_data_'+args.dataset)
+    print('\nSAVED INFOS in '+'data/features_gt/'+args.dataset)
 
 if __name__ == "__main__":
     
