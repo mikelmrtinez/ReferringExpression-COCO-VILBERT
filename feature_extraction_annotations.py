@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import PIL
 import torch
 from matplotlib.patches import Rectangle
-
+from tqdm import tqdm
 def main():
     parser = argparse.ArgumentParser()
 
@@ -61,15 +61,17 @@ def main():
     for split in splits:
         ref_ids = refer.getRefIds(split=split)
         print('%s refs are in split [%s].' % (len(ref_ids), split))
+    
+    print("\nApplied split: ", args.desired_split)
+    print()
 
     # Store all ref ids of desired split in variable ref_ids
     ref_ids = refer.getRefIds(split=args.desired_split)
     # Loop through all references and create data
     stock = []
     proccesed_images = []
-    
-    for ref_id in ref_ids:
-      
+    for i in tqdm(range(len(ref_ids))):
+        ref_id = ref_ids[i]
         #Load img id
         img_id = refer.getImgIds(ref_id)
         #Load info of image COCO
@@ -93,7 +95,7 @@ def main():
 
     np.save('data/gt_data_'+args.dataset, stock, allow_pickle=True)
 
-    print('SAVED INFOS!')
+    print('\nSAVED INFOS in '+'data/gt_data_'+args.dataset)
 
 if __name__ == "__main__":
     
