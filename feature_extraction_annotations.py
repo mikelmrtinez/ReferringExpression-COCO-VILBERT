@@ -18,7 +18,7 @@ def main():
     )
     parser.add_argument(
         "--dataset",
-        default="refcoco",
+        default="refcoco+",
         type=str,
         help="dataset.",
     )
@@ -67,12 +67,9 @@ def main():
     # Loop through all references and create data
     stock = []
     proccesed_images = []
-    cnt = 0
     
     for ref_id in ref_ids:
-        if cnt >= 20:
-            break
-        cnt += 1
+      
         #Load img id
         img_id = refer.getImgIds(ref_id)
         #Load info of image COCO
@@ -94,7 +91,7 @@ def main():
             info['num_box'] = len(ann_ids)
             stock.append(info)
 
-    np.save('gt_data', stock, allow_pickle=True)
+    np.save('data/gt_data_'+args.dataset, stock, allow_pickle=True)
 
     print('SAVED INFOS!')
 
