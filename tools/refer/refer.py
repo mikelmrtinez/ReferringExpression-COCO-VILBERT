@@ -272,7 +272,7 @@ class REFER:
 			ann_id = ref['ann_id']
 			ann = self.Anns[ann_id]
 			bbox = 	self.getRefBox(ref['ref_id'])
-			box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='green', linewidth=3)
+			box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, ls='--', label='RefCOCO GT', edgecolor='green', linewidth=3)
 			ax.add_patch(box_plot)
 
 	def getMask(self, ref):
