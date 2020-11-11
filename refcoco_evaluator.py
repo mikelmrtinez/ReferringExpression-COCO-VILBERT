@@ -46,7 +46,9 @@ def computeIoU(box1_list, box2_list):
         else:
             inter = 0
         union = box1[2]*box1[3] + box2[2]*box2[3] - inter
-        iou.append(float(inter)/union)
+        iou_score = float(inter)/union
+        print('IoU score: ', iou_score)
+        iou.append(iou_score)
     
     return np.array(iou)
 
@@ -318,16 +320,14 @@ if __name__ == "__main__":
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
         iou_batch = computeIoU(pred_bboxes, ref_bboxes)
         scores.append(score(iou_batch, 0.5))
-        if i%100 == 0:
+        if i%1 == 0:
             print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
+
 
         if args_data.visualize==True:
 
-            for j, bbox in enumerate(pred_bboxes):
-                #print('Pred BBOX: ', bbox)
-
+            for j, pred_bbox in enumerate(pred_bboxes):
                 plt.figure()
-
                 for k, bbox in enumerate(infos[j]['bbox'].tolist()):
                     if k==0:
                         ax = plt.gca()
@@ -340,7 +340,7 @@ if __name__ == "__main__":
 
                 # draw box of the ann using 'red'
                 ax = plt.gca()
-                box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False,ls='--', label='ViLBERT bbox', edgecolor='red', linewidth=2)
+                box_plot = Rectangle((pred_bbox[0], pred_bbox[1]), pred_bbox[2], pred_bbox[3], fill=False,ls='--', label='ViLBERT bbox', edgecolor='red', linewidth=2)
                 ax.add_patch(box_plot)
 
                 ref = refer.Refs[ref_ids[i]]
