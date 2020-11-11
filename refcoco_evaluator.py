@@ -292,11 +292,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feat_root",
-        default="./data/features_gt/",
+        default="./data/features/",
         type=str,
         help="Directory of the GT features .npy file",
     )
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
+    parser.add_argument("--visualize", type=bool, default=False, help="Batch size")
 
     args_data = parser.parse_args()
 
@@ -312,39 +313,41 @@ if __name__ == "__main__":
     scores = []
 
     for i in tqdm(range(0, len(ref_ids), args_data.batch_size)):
-        features, query, infos,  ref_bboxes = batch_loader(i, args_data.batch_size, refer, ref_ids)      
+        features, query, infos,  ref_bboxes = batch_loader(i, args_data.batch_size, refer, ref_ids)
         task = [9]
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
-        iou_batch = computeIoU(pred_bboxes,ref_bboxes)
+        iou_batch = computeIoU(pred_bboxes, ref_bboxes)
         scores.append(score(iou_batch, 0.5))
-        if i%1 == 0:
+        if i%100 == 0:
             print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
-        
-        
-        for j, bbox in enumerate(pred_bboxes):
-            #print('Pred BBOX: ', bbox)
-            
-            plt.figure()
 
-            for k, bbox in enumerate(infos[j]['bbox'].tolist()):
-                if k==0:
-                    ax = plt.gca()
-                    box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, label='COCO GT bbox', edgecolor='blue', linewidth=2)
-                    ax.add_patch(box_plot)
-                else:
-                    ax = plt.gca()
-                    box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='blue', linewidth=2)
-                    ax.add_patch(box_plot)
+        if args_data.visualize==True:
 
-            # draw box of the ann using 'red'
-            ax = plt.gca()
-            box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False,ls='--', label='ViLBERT bbox', edgecolor='red', linewidth=2)
-            ax.add_patch(box_plot)
+            for j, bbox in enumerate(pred_bboxes):
+                #print('Pred BBOX: ', bbox)
 
-            ref = refer.Refs[ref_ids[i]]
-            refer.showRef(ref, seg_box='box')
-            plt.legend()
-            plt.show()
+                plt.figure()
+
+                for k, bbox in enumerate(infos[j]['bbox'].tolist()):
+                    if k==0:
+                        ax = plt.gca()
+                        box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, label='COCO GT bbox', edgecolor='blue', linewidth=0.5)
+                        ax.add_patch(box_plot)
+                    else:
+                        ax = plt.gca()
+                        box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='blue', linewidth=2)
+                        ax.add_patch(box_plot)
+
+                # draw box of the ann using 'red'
+                ax = plt.gca()
+                box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False,ls='--', label='ViLBERT bbox', edgecolor='red', linewidth=2)
+                ax.add_patch(box_plot)
+
+                ref = refer.Refs[ref_ids[i]]
+                refer.showRef(ref, seg_box='box')
+                plt.legend()
+                plt.show()
+
     print("\nFinal Score of Evaluation: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
         
 

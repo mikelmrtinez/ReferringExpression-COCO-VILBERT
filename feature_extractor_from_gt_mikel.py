@@ -50,12 +50,7 @@ class FeatureExtractor:
             help="Imdb file containing file path and bboxes.",
         )
         parser.add_argument("--batch_size", type=int, default=2, help="Batch size")
-        parser.add_argument(
-            "--num_features",
-            type=int,
-            default=100,
-            help="Number of features to extract.",
-        )
+        parser.add_argument("--num_features", type=int, default=100, help="Number of features to extract.")
         parser.add_argument(
             "--output_folder", type=str, default="./data/features_gt", help="Output folder"
         )
@@ -78,6 +73,9 @@ class FeatureExtractor:
         )
         parser.add_argument(
             "--partition", type=int, default=0, help="Partition to download."
+        )
+        parser.add_argument(
+            "--proposals", type=bool, default=False, help="Partition to download."
         )
         return parser
 
@@ -172,14 +170,23 @@ class FeatureExtractor:
                     cls_scores[keep],
                     max_conf[keep],
                 )
-
-            feat_list.append(feats[i])
-            num_boxes = len(feats[i])
-            bbox = output[0]["proposals"][i]
-            bbox = bbox.resize(((im_infos[i]["width"], im_infos[i]["height"])))
-            bbox = bbox.bbox
+            sorted_scores, sorted_indices = torch.sort(max_conf, descending=True)
+            num_boxes = (sorted_scores[: self.args.num_features] != 0).sum()
+            keep_boxes = sorted_indices[: self.args.num_features]
+            feat_list.append(feats[i][keep_boxes])
+            # bbox = output[0]["proposals"][i][keep_boxes].bbox.resize(((im_infos[i]["width"], im_infos[i]["height"])))
+            bbox = output[0]["proposals"][i][keep_boxes].bbox / im_scales[i]
             # Predict the class label using the scores
-            objects = torch.argmax(scores[:, start_index:], dim=1)
+            objects = torch.argmax(scores[keep_boxes][start_index:], dim=1)
+            cls_prob = torch.max(scores[keep_boxes][start_index:], dim=1)
+
+            #feat_list.append(feats[i])
+            #num_boxes = len(feats[i])
+            #bbox = output[0]["proposals"][i]
+            #bbox = bbox.resize(((im_infos[i]["width"], im_infos[i]["height"])))
+            #bbox = bbox.bbox
+            # Predict the class label using the scores
+            #objects = torch.argmax(scores[:, start_index:], dim=1)
 
             info_list.append(
                 {
@@ -208,25 +215,31 @@ class FeatureExtractor:
         # in detector to work
         current_img_list = to_image_list(img_tensor, size_divisible=32)
         current_img_list = current_img_list.to("cuda")
-        proposals = self.get_batch_proposals(
-            current_img_list, im_scales, im_infos, im_bbox
-        )
-        #print("   Getting batch proposals done")
-  
-        torch.cuda.empty_cache()
-        with torch.no_grad():
-            output = self.detection_model(current_img_list, proposals=proposals)
 
-        feat_list = self._process_feature_extraction(
+        if self.args.proposals==True:
+
+            proposals = self.get_batch_proposals(
+                current_img_list, im_scales, im_infos, im_bbox
+            )
+            #print("   Getting batch proposals done")
+            torch.cuda.empty_cache()
+            with torch.no_grad():
+                output = self.detection_model(current_img_list, proposals=proposals)
+        else:
+            torch.cuda.empty_cache()
+            with torch.no_grad():
+                output = self.detection_model(current_img_list)
+
+
+        feat_list, info_list = self._process_feature_extraction(
             output,
             im_scales,
             im_infos,
             self.args.feature_name,
             self.args.confidence_threshold,
         )
-        
-        #print("   Features batch extracted!")
-        return feat_list
+
+        return feat_list, info_list
 
     def _chunks(self, array, chunk_size):
         for i in tqdm(range(0, len(array), chunk_size)):
