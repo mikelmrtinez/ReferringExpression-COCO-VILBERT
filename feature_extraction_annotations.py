@@ -18,7 +18,7 @@ def main():
     )
     parser.add_argument(
         "--dataset",
-        default="refcoco+",
+        default="refcoco",
         type=str,
         help="dataset.",
     )
@@ -100,19 +100,19 @@ def main():
 if __name__ == "__main__":
     
     main()
-    # UNCOMENT TO CHECK IF IS CORRECTLY STORED THE BBOXEZS
-    # data = np.load('gt_data.npy',  allow_pickle=True).reshape(-1,1)[3][0]
-    # print(data)
-    # image_path = data["file_path"]
-    # img = PIL.Image.open(image_path).convert('RGB')
-    # img = torch.tensor(np.array(img))
-    # plt.axis('off')
-    # plt.imshow(img)
+    #UNCOMENT TO CHECK IF IS CORRECTLY STORED THE BBOXEZS
+    data = np.load('gt_data.npy',  allow_pickle=True).reshape(-1,1)[3][0]
+    print(data)
+    image_path = data["file_path"]
+    img = PIL.Image.open(image_path).convert('RGB')
+    img = torch.tensor(np.array(img))
+    plt.axis('off')
+    plt.imshow(img)
 
-    # for i in range(data['bbox'].shape[0]):
-    #     bbox = data['bbox'][i]
-    #     ax = plt.gca()
-    #     box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='red', linewidth=2)
-    #     ax.add_patch(box_plot)
-    # plt.show()
+    for i in range(data['bbox'].shape[0]):
+        bbox = data['bbox'][i]
+        ax = plt.gca()
+        box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='red', linewidth=2)
+        ax.add_patch(box_plot)
+    plt.show()
 

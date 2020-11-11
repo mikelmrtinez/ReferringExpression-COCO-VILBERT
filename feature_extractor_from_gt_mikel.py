@@ -38,14 +38,14 @@ class FeatureExtractor:
     def get_parser(self):
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--model_file", default="./data/detectron_model.pth", type=str, help="Detectron model file"
+            "--model_file", default="./data/detectron/detectron_model.pth", type=str, help="Detectron model file"
         )
         parser.add_argument(
-            "--config_file", default="./data/detectron_config.yaml", type=str, help="Detectron config file"
+            "--config_file", default="./data/detectron/detectron_config.yaml", type=str, help="Detectron config file"
         )
         parser.add_argument(
             "--imdb_gt_file",
-            default="./data/features_gt/refcoco+.npy",
+            default="./data/features_gt/refcoco.npy",
             type=str,
             help="Imdb file containing file path and bboxes.",
         )
@@ -213,7 +213,7 @@ class FeatureExtractor:
         )
         #print("   Getting batch proposals done")
   
-        
+        torch.cuda.empty_cache()
         with torch.no_grad():
             output = self.detection_model(current_img_list, proposals=proposals)
 
@@ -224,6 +224,7 @@ class FeatureExtractor:
             self.args.feature_name,
             self.args.confidence_threshold,
         )
+        
         #print("   Features batch extracted!")
         return feat_list
 

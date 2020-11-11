@@ -296,7 +296,7 @@ if __name__ == "__main__":
         type=str,
         help="Directory of the GT features .npy file",
     )
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
 
     args_data = parser.parse_args()
 
@@ -317,8 +317,34 @@ if __name__ == "__main__":
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
         iou_batch = computeIoU(pred_bboxes,ref_bboxes)
         scores.append(score(iou_batch, 0.5))
-        if i%25 == 0:
+        if i%1 == 0:
             print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
+        
+        
+        for j, bbox in enumerate(pred_bboxes):
+            #print('Pred BBOX: ', bbox)
+            
+            plt.figure()
+
+            for k, bbox in enumerate(infos[j]['bbox'].tolist()):
+                if k==0:
+                    ax = plt.gca()
+                    box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, label='COCO GT bbox', edgecolor='blue', linewidth=2)
+                    ax.add_patch(box_plot)
+                else:
+                    ax = plt.gca()
+                    box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='blue', linewidth=2)
+                    ax.add_patch(box_plot)
+
+            # draw box of the ann using 'red'
+            ax = plt.gca()
+            box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False,ls='--', label='ViLBERT bbox', edgecolor='red', linewidth=2)
+            ax.add_patch(box_plot)
+
+            ref = refer.Refs[ref_ids[i]]
+            refer.showRef(ref, seg_box='box')
+            plt.legend()
+            plt.show()
     print("\nFinal Score of Evaluation: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
         
 
