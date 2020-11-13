@@ -267,6 +267,13 @@ def callVILBert():
 
     return tokenizer, model
 
+def xy_to_wh(bboxes):
+    bbox_reshaped = []
+    for bbox in bboxes:
+        x1, y1, w, h = bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]-bbox[1]
+        bbox_reshaped.append([x1, y1, w, h])
+    
+    return bbox_reshaped
 def batch_loader(i, batch_size, refer, ref_ids):
     features_list, query_list, infos_list,  ref_bbox_list = [], [], [], []
     for j in range(i, (i+1)*batch_size):
@@ -294,12 +301,7 @@ def batch_loader(i, batch_size, refer, ref_ids):
     return features_list, query_list, infos_list,  ref_bbox_list
 
 
-def xy_to_wh(bboxes):
-    bbox_reshaped = []
-    for bbox in bboxes:
-        x1, y1, w, h = bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]-bbox[1]
-        bbox_reshaped.append([x1, y1, w, h])
-    return bbox_reshaped
+
 
 if __name__ == "__main__":
 
