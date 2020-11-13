@@ -34,6 +34,7 @@ def main():
         type=str,
         help="The desired split to store, test, train or val.",
     )
+    
     args = parser.parse_args()
 
     data_root = args.data_root
@@ -85,7 +86,8 @@ def main():
             bboxes = []
             for i in range(len(ann_ids)):
                 ann = refer.loadAnns(ann_ids[i])[0]
-                bboxes.append(ann['bbox'])
+                #import pdb;pdb.set_trace()
+                bboxes.append([ann['bbox'][0], ann['bbox'][1], ann['bbox'][0]+ann['bbox'][2], ann['bbox'][1]+ann['bbox'][3]])
             info = {}
             info['file_name'] = img['file_name']
             info['file_path'] = refer.IMAGE_DIR+'/'+img['file_name']
@@ -101,14 +103,13 @@ if __name__ == "__main__":
     
     main()
     #UNCOMENT TO CHECK IF IS CORRECTLY STORED THE BBOXEZS
-    data = np.load('gt_data.npy',  allow_pickle=True).reshape(-1,1)[3][0]
+    data = np.load('data/features_gt/'+args.dataset+'.npy',  allow_pickle=True).reshape(-1,1)[0][0]
     print(data)
     image_path = data["file_path"]
     img = PIL.Image.open(image_path).convert('RGB')
     img = torch.tensor(np.array(img))
     plt.axis('off')
     plt.imshow(img)
-
     for i in range(data['bbox'].shape[0]):
         bbox = data['bbox'][i]
         ax = plt.gca()

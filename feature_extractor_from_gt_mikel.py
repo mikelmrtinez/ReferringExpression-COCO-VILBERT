@@ -49,7 +49,7 @@ class FeatureExtractor:
             type=str,
             help="Imdb file containing file path and bboxes.",
         )
-        parser.add_argument("--batch_size", type=int, default=2, help="Batch size")
+        parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
         parser.add_argument("--num_features", type=int, default=100, help="Number of features to extract.")
         parser.add_argument(
             "--output_folder", type=str, default="./data/features_gt", help="Output folder"
@@ -179,7 +179,8 @@ class FeatureExtractor:
             #bbox = output[0]["proposals"][i][keep_boxes].bbox / im_scales[i]
             # Predict the class label using the scores
             objects = torch.argmax(scores[keep_boxes][start_index:], dim=1)
-            cls_prob = torch.max(scores[keep_boxes][start_index:], dim=1)
+            cls_prob = torch.max(scores[keep_boxes][start_index:], dim=1)[0]
+            
 
             #feat_list.append(feats[i])
             #num_boxes = len(feats[i])
@@ -196,7 +197,7 @@ class FeatureExtractor:
                     "objects": objects.cpu().numpy(),
                     "image_width": im_infos[i]["width"],
                     "image_height": im_infos[i]["height"],
-                    "cls_prob": scores.cpu().numpy(),
+                    "cls_prob": cls_prob.cpu().numpy(),
                 }
             )
 
@@ -216,6 +217,7 @@ class FeatureExtractor:
         # in detector to work
         current_img_list = to_image_list(img_tensor, size_divisible=32)
         current_img_list = current_img_list.to("cuda")
+        #import pdb;pdb.set_trace()
 
         if self.args.proposals==True:
 
@@ -253,7 +255,7 @@ class FeatureExtractor:
         file_base_name = str(file_base_name) + ".npy"
 
         np.save(os.path.join(self.args.output_folder, file_base_name), info)
-        #print("Saved in: "+os.path.join(self.args.output_folder, file_base_name))
+        print("Saved in: "+os.path.join(self.args.output_folder, file_base_name))
 
     def extract_features(self):
         extraction = []

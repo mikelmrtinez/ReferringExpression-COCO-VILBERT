@@ -47,7 +47,6 @@ def computeIoU(box1_list, box2_list):
             inter = 0
         union = box1[2]*box1[3] + box2[2]*box2[3] - inter
         iou_score = float(inter)/union
-        print('IoU score: ', iou_score)
         iou.append(iou_score)
     
     return np.array(iou)
@@ -64,13 +63,13 @@ def prediction_refering_expression(question, features, spatials, segment_ids, in
         question, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task_tokens, output_all_attention_masks=True
     )
     
-    width, height = float(infos[0]['image_width']), float(infos[0]['image_height'])
+    width, height = int(infos[0]['image_width']), int(infos[0]['image_height'])
 
     # grounding: 
     logits_vision = torch.max(vision_logit, 1)[1].data
     grounding_val, grounding_idx = torch.sort(vision_logit.squeeze(2), 1, True)    
-        
-    # for whole batch to do!
+    
+     # for whole batch
     top_idx = grounding_idx[:,0].tolist()
     predicted_bboxes = []
     for indx, value in enumerate(top_idx):
@@ -82,8 +81,40 @@ def prediction_refering_expression(question, features, spatials, segment_ids, in
         #x1 = top_box[:,0] * width
         x2 = spatials[indx, value,2]*width
         #x2 = top_box[:,2] * width
-
         predicted_bboxes.append([x1.item(), y1.item(), x2.item(), y2.item()])
+        
+    #     examples_per_row = min(10, len(grounding_idx[indx]))
+    #     ncols = examples_per_row 
+    #     nrows = 1
+    #     figsize = [12, ncols*20]     # figure size, inches
+    #     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+
+    #     for i, axi in enumerate(ax.flat):
+    #         idx = grounding_idx[indx, i]
+    #         print('idx: ', idx)
+    #         val = grounding_val[indx, i]
+    #         box = spatials[indx][idx][:4].tolist()
+    #         y1 = int(box[1] * height)
+    #         y2 = int(box[3] * height)
+    #         x1 = int(box[0] * width)
+    #         x2 = int(box[2] * width)
+
+    #         print('final area: ',spatials[indx][idx][4])
+    #         # patch = img[y1:y2+y1,x1:x2+x1]
+    #         patch = img[y1:y2,x1:x2]
+    #         #print(patch)
+    #         axi.imshow(patch)
+    #         axi.axis('off')
+    #         axi.set_title(str(i) + ": " + str(val.item()))
+    #     plt.axis('off')
+    #     plt.tight_layout(True)
+    #     plt.show()    
+
+    # print("shape: ", predicted_bboxes[0])
+    # show_boxes2(img,torch.from_numpy(np.array(predicted_bboxes[0])).unsqueeze_(0), ['blue'], texts=None)
+    # plt.show()
+    
+    
     return predicted_bboxes
 
 def untokenize_batch(batch):
@@ -156,8 +187,9 @@ def custom_prediction(query, task, features, infos, tokenizer, model):
     task = torch.stack(task_list, dim=0).long().cuda().squeeze(1)
 
     #print(features.shape, spatials.shape, image_mask.shape, co_attention_mask.shape, text.shape, input_mask.shape, segment_ids.shape, task.shape)
-
+    #prediction(text, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task)
     pred_bboxes = prediction_refering_expression(text, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task, model, infos)
+    
     return pred_bboxes
 
 def callVILBert():
@@ -262,6 +294,12 @@ def batch_loader(i, batch_size, refer, ref_ids):
     return features_list, query_list, infos_list,  ref_bbox_list
 
 
+def xy_to_wh(bboxes):
+    bbox_reshaped = []
+    for bbox in bboxes:
+        x1, y1, w, h = bbox[0], bbox[1], bbox[2]-bbox[0], bbox[3]-bbox[1]
+        bbox_reshaped.append([x1, y1, w, h])
+    return bbox_reshaped
 
 if __name__ == "__main__":
 
@@ -294,7 +332,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feat_root",
-        default="./data/features/",
+        default="./data/features_gt/",
         type=str,
         help="Directory of the GT features .npy file",
     )
@@ -318,24 +356,30 @@ if __name__ == "__main__":
         features, query, infos,  ref_bboxes = batch_loader(i, args_data.batch_size, refer, ref_ids)
         task = [9]
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
+        pred_bboxes = xy_to_wh(pred_bboxes)
         iou_batch = computeIoU(pred_bboxes, ref_bboxes)
         scores.append(score(iou_batch, 0.5))
-        if i%1 == 0:
+        if i%100 == 0:
             print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
 
 
         if args_data.visualize==True:
 
             for j, pred_bbox in enumerate(pred_bboxes):
+                print("ref bbox: ", ref_bboxes)
+                print("pred bbox: ", pred_bbox)
                 plt.figure()
-                for k, bbox in enumerate(infos[j]['bbox'].tolist()):
+                gt_bboxes = infos[j]['bbox'].tolist()
+                gt_bboxes = xy_to_wh(gt_bboxes)
+                
+                for k, bbox in enumerate(gt_bboxes):
                     if k==0:
                         ax = plt.gca()
                         box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, label='COCO GT bbox', edgecolor='blue', linewidth=0.5)
                         ax.add_patch(box_plot)
                     else:
                         ax = plt.gca()
-                        box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='blue', linewidth=2)
+                        box_plot = Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], fill=False, edgecolor='blue', linewidth=0.5)
                         ax.add_patch(box_plot)
 
                 # draw box of the ann using 'red'
@@ -347,6 +391,7 @@ if __name__ == "__main__":
                 refer.showRef(ref, seg_box='box')
                 plt.legend()
                 plt.show()
+                #import pdb;pdb.set_trace()
 
     print("\nFinal Score of Evaluation: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
         
