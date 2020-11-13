@@ -3,3 +3,6 @@
 *.bin
 *pth
 *.gz
+refcoco/
+refcoco+/
+train2014/
