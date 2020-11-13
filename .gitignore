@@ -1,5 +1,5 @@
-save/
-data/
+*.npy
+*.jpg
 *.bin
 *pth
 *.gz
