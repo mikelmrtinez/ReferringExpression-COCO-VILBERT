@@ -161,7 +161,7 @@ def custom_prediction(query, task, features, infos, tokenizer, model):
 
 def callVILBert():
 
-    args = SimpleNamespace(from_pretrained= 'save/multi_task_model.bin',#"save/refcoco_bert_base_6layer_6conect-finetune_from_multi_task_model_refcoco/pytorch_model_19.bin",
+    args = SimpleNamespace(from_pretrained= 'models/vilbert/multi_task_model.bin',#"save/refcoco_bert_base_6layer_6conect-finetune_from_multi_task_model_refcoco/pytorch_model_19.bin",
                         bert_model="bert-base-uncased",
                         config_file="config/bert_base_6layer_6conect.json",
                         max_seq_length=101,
