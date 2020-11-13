@@ -4,7 +4,7 @@ This tutorial shows how to evaluate the different Referring Expressions splits f
 
 Modifications have been applied for a better comprehension of our task. 
 
-## Quicke-Start
+## Quick-Start
 
 With the ```demo.ipybn ``` you can test by yourself the results regarding referring expression of ViLBERT approach.
 
