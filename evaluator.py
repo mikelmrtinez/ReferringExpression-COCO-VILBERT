@@ -82,37 +82,6 @@ def prediction_refering_expression(question, features, spatials, segment_ids, in
         x2 = spatials[indx, value,2]*width
         #x2 = top_box[:,2] * width
         predicted_bboxes.append([x1.item(), y1.item(), x2.item(), y2.item()])
-        
-    #     examples_per_row = min(10, len(grounding_idx[indx]))
-    #     ncols = examples_per_row 
-    #     nrows = 1
-    #     figsize = [12, ncols*20]     # figure size, inches
-    #     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-
-    #     for i, axi in enumerate(ax.flat):
-    #         idx = grounding_idx[indx, i]
-    #         print('idx: ', idx)
-    #         val = grounding_val[indx, i]
-    #         box = spatials[indx][idx][:4].tolist()
-    #         y1 = int(box[1] * height)
-    #         y2 = int(box[3] * height)
-    #         x1 = int(box[0] * width)
-    #         x2 = int(box[2] * width)
-
-    #         print('final area: ',spatials[indx][idx][4])
-    #         # patch = img[y1:y2+y1,x1:x2+x1]
-    #         patch = img[y1:y2,x1:x2]
-    #         #print(patch)
-    #         axi.imshow(patch)
-    #         axi.axis('off')
-    #         axi.set_title(str(i) + ": " + str(val.item()))
-    #     plt.axis('off')
-    #     plt.tight_layout(True)
-    #     plt.show()    
-
-    # print("shape: ", predicted_bboxes[0])
-    # show_boxes2(img,torch.from_numpy(np.array(predicted_bboxes[0])).unsqueeze_(0), ['blue'], texts=None)
-    # plt.show()
     
     
     return predicted_bboxes
@@ -186,8 +155,6 @@ def custom_prediction(query, task, features, infos, tokenizer, model):
     segment_ids = torch.stack(segment_ids_list, dim=0).long().cuda().squeeze(1)
     task = torch.stack(task_list, dim=0).long().cuda().squeeze(1)
 
-    #print(features.shape, spatials.shape, image_mask.shape, co_attention_mask.shape, text.shape, input_mask.shape, segment_ids.shape, task.shape)
-    #prediction(text, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task)
     pred_bboxes = prediction_refering_expression(text, features, spatials, segment_ids, input_mask, image_mask, co_attention_mask, task, model, infos)
     
     return pred_bboxes
@@ -334,9 +301,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--feat_root",
-        default="./data/features_gt/",
+        default="./data/features/fastercnn_proposals/",
         type=str,
-        help="Directory of the GT features .npy file",
+        help="Directory of the features .npy file",
     )
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     parser.add_argument("--visualize", type=bool, default=False, help="Batch size")

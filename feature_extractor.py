@@ -79,7 +79,7 @@ class FeatureExtractor:
         parser.add_argument(
             "--output_folder", 
             type=str, 
-            default="./data/features/coco_gt",  #If proposed bboxes from fasterCNN desired "./data/features/fastercnn_proposals"
+            default="./data/features/fastercnn_proposals",  #If proposed bboxes from fasterCNN desired "./data/features/fastercnn_proposals"
             help="Output folder. You should select coco_gt or fastercnn_proposals based on --coco_proposals "
         )
         parser.add_argument(
