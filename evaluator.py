@@ -316,10 +316,10 @@ if __name__ == "__main__":
     feat_root = args_data.feat_root
 
     refer = REFER(data_root, dataset, splitBy)
-    ref_ids = refer.getRefIds(split='test')
+    ref_ids = refer.getRefIds(split=args_data.desired_split)
 
     tokenizer, model = callVILBert()
-    scores = []
+    ious = []
 
     for i in tqdm(range(0, len(ref_ids), args_data.batch_size)):
         features, query, infos,  ref_bboxes = batch_loader(i, args_data.batch_size, refer, ref_ids)
@@ -327,16 +327,11 @@ if __name__ == "__main__":
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
         pred_bboxes = xy_to_wh(pred_bboxes)
         iou_batch = computeIoU(pred_bboxes, ref_bboxes)
-        scores.append(score(iou_batch, 0.5))
-        if i%100 == 0:
-            print("Scores: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
-
+        ious.append(iou_batch)
 
         if args_data.visualize==True:
 
             for j, pred_bbox in enumerate(pred_bboxes):
-                print("ref bbox: ", ref_bboxes)
-                print("pred bbox: ", pred_bbox)
                 plt.figure()
                 gt_bboxes = infos[j]['bbox'].tolist()
                 gt_bboxes = xy_to_wh(gt_bboxes)
@@ -360,9 +355,8 @@ if __name__ == "__main__":
                 refer.showRef(ref, seg_box='box')
                 plt.legend()
                 plt.show()
-                #import pdb;pdb.set_trace()
 
-    print("\nFinal Score of Evaluation: {} % ".format(np.round(sum(scores)/len(scores), 2)*100))
+    print("\nFinal Score of Evaluation: {} % ".format(np.round(score(np.array(ious).flatten()), 2)*100))
         
 
 
