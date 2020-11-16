@@ -88,9 +88,9 @@ def main():
         else:
             splits = ['train', 'val', 'test']
     elif dataset == 'refcoco':
-        splits = ['train', 'val', 'test']
+        splits = ['train', 'val', 'test', 'testA', 'testB']
     elif dataset == 'refcoco+':
-        splits = ['train', 'val', 'test']
+        splits = ['train', 'val', 'test', 'testA', 'testB']
     elif dataset == 'refcocog':
         splits = ['train', 'val']  # we don't have test split for refcocog right now.
 
