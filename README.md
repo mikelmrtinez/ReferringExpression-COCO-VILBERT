@@ -1,10 +1,10 @@
-# Referring Expression with ViLBERT for COCO Data Set
+# Referring Expression Tutorial with ViLBERT for COCO Data Set
 
 This tutorial shows how to evaluate the different Referring Expressions splits for the Coco data set. This repository is forked from the [12-in-1: Multi-Task Vision and Language Representation Learning](https://github.com/facebookresearch/vilbert-multi-task) repository developed by Facebook research. 
 
 Modifications have been applied for a better comprehension of our task. 
 
-## Quick-Start
+## Quicke-Start
 
 With the ```demo.ipybn ``` you can test by yourself the results regarding referring expression of ViLBERT approach.
 
@@ -14,7 +14,7 @@ To evaluate the whole dataset you simply have to run the following code lines fr
 ```
 python extract_annotations.py --dataset refcoco --splitBy unc --desired_split test --visualize True
 ```
-### Extract Features from fasteRCNN 
+### Extract Features from fasteRCNN (refCOCO example)
 
 If you want to use the bounding boxes provided by FasteRCNN run:
 ```
@@ -24,7 +24,7 @@ If you want to use the boudning boxes provided by COCO dataset you should run:
 ```
 python feature_extractor.py --coco_gt True --output_folder ./data/features/coco_gt
 ```
-### Evaluate refCOCO
+### Evaluate (refCOCO example)
 
 This script will print the accuracy acquired for the desired Referring Expression using ViLBERT and FasteRCNN as feature extractor.
 
@@ -95,12 +95,22 @@ make
 
 It is very important that the data folder has the following structure
 ```
-data |-- images |-- mscoco |-- images |-- train2014
+data |-- images   |-- mscoco |-- images |-- train2014
      |
-     |-- refcoco |-- annotations (Coco dataset)
-                 |-- instances.json
-                 |-- refs(google).p
-                 |-- refs(unc).p
+     |-- features | coco_gt
+     |            | fastercnn_proposals  (features folder will be generated when running the pythons scripts of fearure extraction)
+     |            | refcoco.npy
+     |
+     |
+     |-- refcoco  |-- annotations (Coco dataset)
+     |            |-- instances.json
+     |            |-- refs(google).p
+     |            |-- refs(unc).p
+     |
+     |-- refcoco+  |-- annotations (Coco dataset)
+                  |-- instances.json
+                  |-- refs(google).p
+                  |-- refs(unc).p
                                                                             
 ```
 
