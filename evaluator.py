@@ -49,7 +49,7 @@ def computeIoU(box1_list, box2_list):
         iou_score = float(inter)/union
         iou.append(iou_score)
     
-    return np.array(iou)
+    return iou
 
 
 def score(IoU, threshold):
