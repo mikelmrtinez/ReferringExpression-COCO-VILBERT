@@ -31,9 +31,8 @@ from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
 #Metric
-def computeIoU(box1_list, box2_list):
+def computeIoU(box1_list, box2_list, ious):
     # each box is of [x1, y1, w, h]
-    iou = []
     for i in range(len(box1_list)):
         box1, box2 = box1_list[i], box2_list[i]
         inter_x1 = max(box1[0], box2[0])
@@ -46,14 +45,14 @@ def computeIoU(box1_list, box2_list):
         else:
             inter = 0
         union = box1[2]*box1[3] + box2[2]*box2[3] - inter
-        iou_score = float(inter)/union
-        iou.append(iou_score)
+        iou_score = float(inter)/float(union)
+        ious.append(iou_score)
     
-    return iou
+    return ious 
 
 
 def score(IoU, threshold):
-    pre_scores = np.where(IoU>threshold, 1, 0)
+    pre_scores = np.where(IoU>threshold, 1., 0.)
     return pre_scores.mean()
 
 
@@ -326,8 +325,8 @@ if __name__ == "__main__":
         task = [9]
         pred_bboxes = custom_prediction(query, task, features, infos, tokenizer, model)
         pred_bboxes = xy_to_wh(pred_bboxes)
-        iou_batch = computeIoU(pred_bboxes, ref_bboxes)
-        ious.append(iou_batch)
+        ious = computeIoU(pred_bboxes, ref_bboxes, ious)
+        #ious.append(iou_batch)
 
         if args_data.visualize==True:
 
@@ -355,8 +354,8 @@ if __name__ == "__main__":
                 refer.showRef(ref, seg_box='box')
                 plt.legend()
                 plt.show()
-
-    print("\nFinal Score of Evaluation: {} % ".format(np.round(score(np.array(ious).flatten()), 2)*100))
+            
+    print("\nFinal Score of Evaluation: {} % ".format(score(np.round(np.array(ious), 5), 0.5)*100))
         
 
 
