@@ -1,6 +1,6 @@
 # Referring Expression Tutorial with ViLBERT for COCO Data Set
 
-This tutorial shows how to evaluate the different Referring Expressions splits for the Coco data set. This repository is forked from the [12-in-1: Multi-Task Vision and Language Representation Learning](https://github.com/facebookresearch/vilbert-multi-task) repository developed by Facebook research. 
+This tutorial shows how to evaluate the different Referring Expressions splits for the Coco dataset. This repository is forked from the [12-in-1: Multi-Task Vision and Language Representation Learning](https://github.com/facebookresearch/vilbert-multi-task) repository developed by Facebook research. 
 
 Modifications have been applied for a better comprehension of our task. 
 
