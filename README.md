@@ -6,10 +6,10 @@ Modifications have been applied for a better comprehension of our task.
 
 ## Quick-Start
 
-With the ```demo.ipybn ``` you can test by yourself the results regarding referring expression of ViLBERT approach.
+With the ```demo.ipybn ``` you can test by yourself the results achieved with the ViLBERT approach for the Referring Expression task.
 
 ## Evaluate refCOCO, refCOCO+, refCOCOg, and refclef
-To evaluate the whole dataset you simply have to run the following code lines from the root of the repository.
+To evaluate the whole dataset you simply have to run the following lines of code from the root of the repository.
 ### Extract annotations from COCO dataset (refCOCO example)
 ```
 python extract_annotations.py --dataset refcoco --splitBy unc --desired_split test --visualize True
@@ -20,9 +20,31 @@ If you want to use the bounding boxes provided by FasteRCNN run:
 ```
 python feature_extractor.py 
 ```
-If you want to use the boudning boxes provided by COCO dataset you should run:
+If you want to use the bounding boxes provided by COCO dataset you should run:
 ```
 python feature_extractor.py --coco_gt True --output_folder ./data/features/coco_gt
+```
+The structure of the generated `.npy` is the following:
+```
+{
+     {    
+          'file_name': COCO_train2014_00656574.jpg'
+          'file_path': PATH_TO_IMAGE
+          'bbox': [[x, y, w, h],
+                    ... ,[x,y,w,h]]
+          'num_boxes': 4
+     },
+     
+     ...,
+     
+     {
+          'file_name': COCO_train2014_00884470.jpg'
+          'file_path': PATH_TO_IMAGE
+          'bbox': [[x, y, w, h],
+                    ... ,[x,y,w,h]]
+          'num_boxes': 5
+      }
+}
 ```
 ### Evaluate (refCOCO example)
 
