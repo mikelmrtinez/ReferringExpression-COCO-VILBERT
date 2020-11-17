@@ -129,7 +129,7 @@ data |-- images   |-- mscoco |-- images |-- train2014
      |            |-- refs(google).p
      |            |-- refs(unc).p
      |
-     |-- refcoco+  |-- annotations (Coco dataset)
+     |-- refcoco+ |-- annotations (Coco dataset)
                   |-- instances.json
                   |-- refs(google).p
                   |-- refs(unc).p
