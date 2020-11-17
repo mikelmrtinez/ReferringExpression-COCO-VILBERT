@@ -120,8 +120,8 @@ It is very important that the data folder has the following structure
 data |-- images   |-- mscoco |-- images |-- train2014
      |
      |-- features | coco_gt
-     |            | fastercnn_proposals  (features folder will be generated when running the pythons scripts of fearure extraction)
-     |            | refcoco.npy
+     |            | fastercnn_proposals  (features folder will be generated when
+     |            | refcoco.npy           running the pythons scripts of fearure extraction)
      |
      |
      |-- refcoco  |-- annotations (Coco dataset)
