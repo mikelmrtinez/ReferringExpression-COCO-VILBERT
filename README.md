@@ -62,7 +62,7 @@ python evaluator.py --dataset refcoco --splitBy unc --desired_split test --feat_
 
 ## Repository Setup
 The setup might be a bit tedious. Don't skip any of the steps and pay attention to the structures mentioned. Once the Repository setup is finished you will be able to run the tutorial in ```demo.ipybn ```.
-### Setup Environmnets
+### Setup Environmnents
 
 1. Create a fresh conda environment and set variable INSTALL_DIR
 
